@@ -27,10 +27,12 @@ function StudentDashboard() {
         const courseProgressArray = [];
 
         for (const course of enrolledCourses) {
-          const res = await GetCourseProgress({
-            userId: userData.user._id,
-            courseId: course.courseId._id,
-          });
+          const res = await GetCourseProgress(userData.user._id, course.courseId._id);
+
+          // const res = await GetCourseProgress({
+          //   userId: userData.user._id,
+          //   courseId: course.courseId._id,
+          // });
 
           courseProgressArray.push({
             id: course.courseId._id,

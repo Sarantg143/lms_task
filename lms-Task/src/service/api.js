@@ -755,6 +755,77 @@ export const GetUserTasksById = async (userId) => {
   }
 }
 
+// Submit a task
+export const SubmitTask = async (taskId, submissionData, token) => {
+  try {
+    if (!taskId) throw new Error("Task ID is required");
+    if (!token) throw new Error("Authentication token is required");
+    const res = await axios.post(
+      `${baseUrl}/api/tasks/submit/${taskId}`,
+      submissionData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return res.data;
+  } catch (error) {
+    throw error.response?.data?.message || error.message || "Failed to submit task";
+  }
+};
 
+
+export const ReviewSubmission = async (taskId, userId, reviewData, token) => {
+  try {
+    if (!taskId) throw new Error("Task ID is required");
+    if (!userId) throw new Error("User ID is required");
+    if (!token) throw new Error("Authentication token is required");
+    
+    const res = await axios.put(
+      `${baseUrl}/api/tasks/review/${taskId}/${userId}`,
+      reviewData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return res.data;
+  } catch (error) {
+    throw error.response?.data?.message || error.message || "Failed to review submission";
+  }
+};
+
+export const GetTaskSubmissions = async (taskId) => {
+  try {
+    if (!taskId) throw new Error("Task ID is required");
+
+    const token = JSON.parse(localStorage.getItem("loginData"))?.token;
+    if (!token) throw new Error("Authentication token not found");
+
+    const response = await axios.get(`${baseUrl}/api/tasks/${taskId}`);
+    return response.data.submissions || [];
+  } catch (error) {
+    console.error('Error fetching task submissions:', error);
+    if (error.response?.data?.error === "Invalid token") {
+      localStorage.clear(); // Clear invalid token
+      throw new Error("Session expired. Please log in again.");
+    }
+    throw error.response?.data?.message || error.message || 'Failed to fetch task submissions';
+  }
+};
+
+export const UpdateTask = async (taskId, taskData) => {
+  try {
+    if (!taskId) throw new Error("Task ID is required");
+    const res = await axios.put(`${baseUrl}/api/tasks/${taskId}`, taskData);
+    return res.data;
+  } catch (error) {
+    throw error.response?.data?.message || error.message || "Failed to update task";
+  }
+};
 
 // ================================= Task Section ========================

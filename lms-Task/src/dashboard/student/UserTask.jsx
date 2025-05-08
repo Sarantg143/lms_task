@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { GetUserTasksById } from '../../service/api'; // Adjust path as needed
+import { GetUserTasksById, SubmitTask } from '../../service/api'; // Adjust path as needed
 
 const UserTask = () => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // State to store submission URL for each task
+  const [submissionUrls, setSubmissionUrls] = useState({});
 
   // Get current user from localStorage (replace with auth context if available)
   const loginData = JSON.parse(localStorage.getItem('loginData'));
@@ -44,6 +46,53 @@ const UserTask = () => {
 
     fetchTasks();
   }, [currentUserId, token]);
+
+  // Handle input change for submission URL
+  const handleInputChange = (taskId, value) => {
+    setSubmissionUrls((prev) => ({
+      ...prev,
+      [taskId]: value,
+    }));
+  };
+
+  // Handle task submission
+  const handleSubmit = async (taskId) => {
+    try {
+      const url = submissionUrls[taskId] || '';
+
+      // Validate input
+      if (!url) {
+        alert('Please provide a submission URL.');
+        return;
+      }
+
+      // Prepare submission data
+      const payload = {
+        file: url,
+        driveLink: '',
+      };
+
+      // Call API to submit task
+      await SubmitTask(taskId, payload, token);
+
+      // Refresh tasks after submission
+      const response = await GetUserTasksById(currentUserId);
+      if (Array.isArray(response)) {
+        setTasks(response);
+      }
+
+      // Clear input for this task
+      setSubmissionUrls((prev) => ({
+        ...prev,
+        [taskId]: '',
+      }));
+
+      alert('Task submitted successfully!');
+    } catch (err) {
+      console.error('Error submitting task:', err);
+      alert(err.message || 'Failed to submit task');
+    }
+  };
 
   // Format date to DD/MM/YYYY
   const formatDate = (dateString) => {
@@ -103,7 +152,7 @@ const UserTask = () => {
                     </div>
                   </div>
                 )}
-                {task.mySubmission && (
+                {task.mySubmission ? (
                   <div className="mt-2">
                     <p className="text-gray-600">Your Submission:</p>
                     <p className="text-gray-500">
@@ -133,6 +182,25 @@ const UserTask = () => {
                     {task.mySubmission.reviewNote && (
                       <p className="text-gray-500">Review: {task.mySubmission.reviewNote}</p>
                     )}
+                  </div>
+                ) : (
+                  <div className="mt-4">
+                    <p className="text-gray-600">Submit Your Task:</p>
+                    <div className="space-y-2">
+                      <input
+                        type="url"
+                        placeholder="Submission URL (e.g., https://example.com/solution.zip)"
+                        value={submissionUrls[task._id] || ''}
+                        onChange={(e) => handleInputChange(task._id, e.target.value)}
+                        className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <button
+                        onClick={() => handleSubmit(task._id)}
+                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                      >
+                        Submit
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
